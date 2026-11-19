@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useStore } from '../context/StoreContext'
@@ -12,6 +12,12 @@ export default function Layout() {
   const navigate = useNavigate()
   const [mini, setMini] = useState(false)
   const [pop, setPop] = useState(null) // 'avisos' | 'user' | null
+  const [tema, setTema] = useState(() => document.documentElement.dataset.theme || 'light')
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = tema
+    try { localStorage.setItem('dear-tema', tema) } catch { /* ignora */ }
+  }, [tema])
 
   const alertas = gerarAlertas(db, user.perfil)
   const itens = MENU.filter((m) => m.perfis.includes(user.perfil))
@@ -23,6 +29,14 @@ export default function Layout() {
         <button className="icon-btn" onClick={() => setMini(!mini)} title="Menu"><Icon nome="menu" /></button>
         <div className="brand">DEAR <span>Inventory</span></div>
         <div className="spacer" />
+
+        <button
+          className="icon-btn"
+          onClick={() => setTema(tema === 'light' ? 'dark' : 'light')}
+          title={tema === 'light' ? 'Modo escuro' : 'Modo claro'}
+        >
+          <Icon nome={tema === 'light' ? 'moon' : 'sun'} />
+        </button>
 
         <div className="pop-wrap">
           <button className="icon-btn" onClick={() => setPop(pop === 'avisos' ? null : 'avisos')} title="Avisos">
