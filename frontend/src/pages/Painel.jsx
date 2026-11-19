@@ -34,27 +34,32 @@ export default function Painel() {
   ].filter(Boolean)
 
   const cards = [
-    { icone: 'layers', cor: 'blue', valor: total.toLocaleString('pt-BR'), label: 'itens em estoque' },
-    { icone: 'dollar', cor: 'ok', valor: brl(valor), label: 'valor em estoque' },
-    { icone: 'bell', cor: 'warn', valor: repor.length, label: 'abaixo do mínimo' },
-    { icone: 'tag', cor: 'bad', valor: vencendo, label: `vencendo em ${DIAS_VENCIMENTO} dias` },
+    { icone: 'layers', cor: '', valor: total.toLocaleString('pt-BR'), label: 'Itens em estoque', sub: `em ${ativos.length} produtos ativos` },
+    { icone: 'dollar', cor: 'ok', valor: brl(valor), label: 'Valor em estoque', sub: 'calculado pelo custo atual' },
+    { icone: 'bell', cor: 'warn', valor: repor.length, label: 'Abaixo do mínimo', sub: 'precisam de reposição' },
+    { icone: 'tag', cor: 'bad', valor: vencendo, label: 'Vencendo', sub: `validade em até ${DIAS_VENCIMENTO} dias` },
   ]
+
+  const dataExtenso = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const primeiroNome = user.nome.split(' ')[0]
 
   return (
     <>
       <PageHeader titulo="Painel" trilha="Principal" />
+      <p className="hello">Olá, {primeiroNome}. Hoje é {dataExtenso}.</p>
 
       <div className="atalhos">
-        {atalhos.map((a) => (
-          <Link key={a.to} to={a.to} className="atalho"><Icon nome={a.icone} /> {a.label}</Link>
+        {atalhos.map((a, i) => (
+          <Link key={a.to} to={a.to} className={'atalho' + (i === 0 ? ' pri' : '')}><Icon nome={a.icone} /> {a.label}</Link>
         ))}
       </div>
 
       <div className="kpis">
         {cards.map((c) => (
-          <div className="kpi" key={c.label}>
-            <div className={'ic ' + c.cor}><Icon nome={c.icone} size={22} /></div>
-            <div><b>{c.valor}</b><span>{c.label}</span></div>
+          <div className={'kpi ' + c.cor} key={c.label}>
+            <div className="k-top"><Icon nome={c.icone} size={18} /> {c.label}</div>
+            <b>{c.valor}</b>
+            <small>{c.sub}</small>
           </div>
         ))}
       </div>
@@ -62,20 +67,25 @@ export default function Painel() {
       <div className="grid g2">
         <div className="panel pad">
           <b>Entradas e saídas dos últimos 7 dias</b>
+          <div className="legenda">
+            <span><i style={{ background: 'var(--c-in)' }} />Entradas</span>
+            <span><i style={{ background: 'var(--c-out)' }} />Saídas</span>
+          </div>
           <div className="bars">
             {dias.map((d, i) => (
               <div className="bc" key={d}>
                 <div className="bp">
-                  <i title={`Entradas: ${ent[i]}`} style={{ height: `${(ent[i] / max) * 100}%`, background: 'var(--blue)' }} />
-                  <i title={`Saídas: ${sai[i]}`} style={{ height: `${(sai[i] / max) * 100}%`, background: '#9db4f0' }} />
+                  <i title={`Entradas: ${ent[i]}`} style={{ height: `${(ent[i] / max) * 100}%`, background: 'var(--c-in)' }}>
+                    {ent[i] > 0 && <em>{ent[i]}</em>}
+                  </i>
+                  <i title={`Saídas: ${sai[i]}`} style={{ height: `${(sai[i] / max) * 100}%`, background: 'var(--c-out)' }}>
+                    {sai[i] > 0 && <em>{sai[i]}</em>}
+                  </i>
                 </div>
                 <small>{d.slice(8)}/{d.slice(5, 7)}</small>
               </div>
             ))}
           </div>
-          <p className="mut" style={{ margin: '8px 0 0' }}>
-            <span style={{ color: 'var(--blue)' }}>■</span> Entradas &nbsp;<span style={{ color: '#9db4f0' }}>■</span> Saídas
-          </p>
         </div>
 
         <div className="panel pad">
@@ -91,12 +101,22 @@ export default function Painel() {
         <div className="panel-h"><b>Produtos para repor</b><Link to="/estoque">Ver estoque</Link></div>
         <div className="tw">
           <table>
-            <thead><tr><th>Produto</th><th>Categoria</th><th>Saldo</th><th>Mínimo</th><th>Situação</th></tr></thead>
+            <thead><tr><th>Produto</th><th>Categoria</th><th>Saldo</th><th>Nível</th><th>Mínimo</th><th>Situação</th></tr></thead>
             <tbody>
-              {repor.length === 0 && <tr><td colSpan={5} className="mut">Nenhum produto abaixo do mínimo.</td></tr>}
+              {repor.length === 0 && <tr><td colSpan={6} className="mut">Nenhum produto abaixo do mínimo.</td></tr>}
               {repor.map(({ p, s }) => {
                 const [txt, tipo] = situacao(p, s)
-                return <tr key={p.id}><td>{p.nome}</td><td>{p.cat}</td><td><b>{s}</b> {p.un}</td><td>{p.min}</td><td><Tag tipo={tipo}>{txt}</Tag></td></tr>
+                const pct = p.min > 0 ? Math.min(100, (s / (p.min * 2)) * 100) : 100
+                return (
+                  <tr key={p.id}>
+                    <td><b>{p.nome}</b></td>
+                    <td>{p.cat}</td>
+                    <td><b>{s}</b> {p.un}</td>
+                    <td><div className="nivel" title={`Saldo ${s} · mínimo ${p.min}`}><i className={tipo} style={{ width: `${pct}%` }} /></div></td>
+                    <td>{p.min}</td>
+                    <td><Tag tipo={tipo}>{txt}</Tag></td>
+                  </tr>
+                )
               })}
             </tbody>
           </table>
