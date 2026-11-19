@@ -25,9 +25,26 @@ export default function Layout() {
 
   return (
     <>
-      <header className="topbar">
+      <aside className={'side' + (mini ? ' mini' : '')}>
+        <div className="side-head">
+          <span className="logo-mark">D</span>
+          <div className="brand lbl">DEAR <span>Inventory</span></div>
+        </div>
+        {grupos.map((g) => (
+          <div key={g}>
+            <div className="grp">{g}</div>
+            {itens.filter((i) => i.grupo === g).map((i) => (
+              <NavLink key={i.to} to={i.to} end className={({ isActive }) => 'nav' + (isActive ? ' on' : '')} title={i.label}>
+                <Icon nome={i.icone} />
+                <span className="lbl">{i.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        ))}
+      </aside>
+
+      <header className={'topbar' + (mini ? ' mini' : '')}>
         <button className="icon-btn" onClick={() => setMini(!mini)} title="Menu"><Icon nome="menu" /></button>
-        <div className="brand">DEAR <span>Inventory</span></div>
         <div className="spacer" />
 
         <button
@@ -71,22 +88,10 @@ export default function Layout() {
 
       {pop && <div className="scrim" onClick={() => setPop(null)} />}
 
-      <aside className={'side' + (mini ? ' mini' : '')}>
-        {grupos.map((g) => (
-          <div key={g}>
-            <div className="grp">{g}</div>
-            {itens.filter((i) => i.grupo === g).map((i) => (
-              <NavLink key={i.to} to={i.to} end className={({ isActive }) => 'nav' + (isActive ? ' on' : '')} title={i.label}>
-                <Icon nome={i.icone} />
-                <span className="lbl">{i.label}</span>
-              </NavLink>
-            ))}
-          </div>
-        ))}
-      </aside>
-
       <main className={'content' + (mini ? ' mini' : '')}>
-        <Outlet />
+        <div className="wrap">
+          <Outlet />
+        </div>
       </main>
     </>
   )
