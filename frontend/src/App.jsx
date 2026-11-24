@@ -3,15 +3,18 @@ import { useAuth } from './context/AuthContext'
 import { MENU } from './config/menu'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import Cadastro from './pages/Cadastro'
 import Painel from './pages/Painel'
 import Produtos from './pages/Produtos'
 import Estoque from './pages/Estoque'
 import Financeiro from './pages/Financeiro'
 import Relatorios from './pages/Relatorios'
 import Usuarios from './pages/Usuarios'
+import Alertas from './pages/Alertas'
 
 const PAGINAS = {
   '/': <Painel />,
+  '/alertas': <Alertas />,
   '/produtos': <Produtos />,
   '/estoque': <Estoque />,
   '/financeiro': <Financeiro />,
@@ -32,6 +35,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/cadastro" element={<Cadastro />} />
       <Route element={<Protegida><Layout /></Protegida>}>
         {MENU.map((m) => (
           <Route

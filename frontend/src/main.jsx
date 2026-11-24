@@ -6,6 +6,13 @@ import { StoreProvider } from './context/StoreContext'
 import { AuthProvider } from './context/AuthContext'
 import './styles.css'
 
+// Tema claro por padrão; a escolha do usuário fica salva no navegador
+try {
+  document.documentElement.dataset.theme = localStorage.getItem('dear-tema') || 'light'
+} catch {
+  document.documentElement.dataset.theme = 'light'
+}
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
