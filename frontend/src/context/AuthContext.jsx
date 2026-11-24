@@ -8,8 +8,10 @@ export function AuthProvider({ children }) {
   const [userId, setUserId] = useState(null)
   const user = db.users.find((u) => u.id === userId && u.ativo) || null
 
+  // O login não diferencia maiúsculas de minúsculas (contas novas usam o e-mail como login).
   function entrar(login, senha) {
-    const u = db.users.find((x) => x.login === login.trim() && x.senha === senha && x.ativo)
+    const l = login.trim().toLowerCase()
+    const u = db.users.find((x) => x.login.toLowerCase() === l && x.senha === senha && x.ativo)
     if (!u) return false
     setUserId(u.id)
     return true

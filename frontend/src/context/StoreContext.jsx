@@ -6,6 +6,7 @@ import { saldo, diasParaVencer, DIAS_VENCIMENTO } from '../utils/stock'
 const Ctx = createContext(null)
 const CHAVE = 'dear-v1'
 const novoId = () => Date.now() + Math.floor(Math.random() * 1000)
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /*
   Camada de dados do protótipo (guarda tudo no localStorage).
@@ -86,12 +87,46 @@ export function StoreProvider({ children }) {
     // RF-02, 03, 04
     addUsuario(u) {
       if (!u.nome.trim() || !u.login.trim() || !u.senha) return 'Preencha nome, login e senha.'
-      if (db.users.some((x) => x.login === u.login.trim())) return 'Login já existe.'
+      if (db.users.some((x) => x.login.toLowerCase() === u.login.trim().toLowerCase())) return 'Login já existe.'
       setDb((d) => ({ ...d, users: [...d.users, { id: novoId(), nome: u.nome.trim(), cargo: u.cargo.trim(), login: u.login.trim(), senha: u.senha, perfil: u.perfil, ativo: true }] }))
       return null
     },
     alternarUsuario: (id) =>
       setDb((d) => ({ ...d, users: d.users.map((u) => (u.id === id ? { ...u, ativo: !u.ativo } : u)) })),
+
+    // Pedidos de acesso: a tela pública de cadastro só cria a solicitação (RF-02: quem cria a conta é o dono).
+    // db.solicitacoes pode não existir em dados antigos do localStorage, por isso o "|| []".
+    solicitarAcesso({ nome, email, cargo }) {
+      const n = nome.trim()
+      const mail = email.trim().toLowerCase()
+      if (n.length < 3) return 'Informe seu nome completo.'
+      if (!EMAIL.test(mail)) return 'Informe um e-mail válido.'
+      if (db.users.some((u) => u.login.toLowerCase() === mail)) return 'Este e-mail já tem uma conta. Faça login.'
+      if ((db.solicitacoes || []).some((s) => s.email === mail && s.status === 'pendente'))
+        return 'Já existe uma solicitação pendente para este e-mail.'
+      setDb((d) => ({
+        ...d,
+        solicitacoes: [...(d.solicitacoes || []), { id: novoId(), nome: n, email: mail, cargo: (cargo || '').trim(), status: 'pendente', data: hoje() }],
+      }))
+      return null
+    },
+    // Aprovar cria o usuário e fecha a solicitação na mesma operação. No backend, validar que quem chama é o dono.
+    aprovarSolicitacao(id, { login, senha, perfil }) {
+      const s = (db.solicitacoes || []).find((x) => x.id === id && x.status === 'pendente')
+      if (!s) return 'Solicitação não encontrada.'
+      const l = login.trim()
+      if (!l || !senha) return 'Informe login e senha inicial.'
+      if (!perfil) return 'Escolha o perfil de acesso.'
+      if (db.users.some((u) => u.login.toLowerCase() === l.toLowerCase())) return 'Login já existe.'
+      setDb((d) => ({
+        ...d,
+        users: [...d.users, { id: novoId(), nome: s.nome, cargo: s.cargo, login: l, senha, perfil, ativo: true }],
+        solicitacoes: d.solicitacoes.map((x) => (x.id === id ? { ...x, status: 'aprovada' } : x)),
+      }))
+      return null
+    },
+    recusarSolicitacao: (id) =>
+      setDb((d) => ({ ...d, solicitacoes: (d.solicitacoes || []).map((x) => (x.id === id ? { ...x, status: 'recusada' } : x)) })),
   }
 
   return <Ctx.Provider value={{ db, ...acoes }}>{children}</Ctx.Provider>
